@@ -48,7 +48,15 @@
     <div class="sec-label">কে এখন কোথায়</div>
     <h2 class="sec-title">মেমোরি ম্যাপ</h2>
     <p class="text-secondary mb-4" style="max-width:640px;">রেজিস্ট্রেশনের সময় যে এলাকা লেখা হয়েছিল, তার ভিত্তিতে ব্যাচের সবাই এখন কোথায় ছড়িয়ে আছে সেটা এই ম্যাপে দেখা যাবে। পিনে ক্লিক করলে ওই এলাকার সবার নাম দেখাবে।</p>
-    <div id="memoryMapEl" style="height:440px; border:1px solid var(--line); border-radius:8px; overflow:hidden;"></div>
+    <div class="memmap-wrap">
+      <div id="memoryMapEl" style="height:440px; border:1px solid var(--line); border-radius:8px; overflow:hidden;"></div>
+      <div id="memoryMapLock" class="memmap-lock">
+        <div class="memmap-lock-box">
+          <i class="bi bi-lock-fill"></i>
+          <span>ম্যাপ স্ক্রল/জুম করতে এখানে ক্লিক করো</span>
+        </div>
+      </div>
+    </div>
     <div id="memoryMapStatus" class="state-msg"><span class="spin"></span> ম্যাপ লোড হচ্ছে...</div>
   </div>
 </section>

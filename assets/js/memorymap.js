@@ -186,9 +186,89 @@ function escapeHtml(str){
     .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
+// ম্যাপের উপর "ক্লিক করে আনলক" ওভারলে — এটা না থাকলে পেজ স্ক্রল করার সময়
+// মাউস/আঙুল ম্যাপের উপর দিয়ে গেলে পেজের বদলে ম্যাপ জুম/প্যান হয়ে যায়, স্ক্রল আটকে যায়।
+// ক্লিক/ট্যাপ করলে আনলক হয়ে স্বাভাবিক জুম-স্ক্রল কাজ করে; ম্যাপ থেকে বাইরে ক্লিক করলে
+// বা মাউস সরিয়ে নিলে আবার লক হয়ে যায়, যাতে পরের বার স্ক্রল করতে সমস্যা না হয়।
+function setupMapScrollLock(map, mapEl, lockEl){
+  function lock(){
+    map.dragging.disable();
+    map.scrollWheelZoom.disable();
+    map.doubleClickZoom.disable();
+    if (map.touchZoom) map.touchZoom.disable();
+    if (map.tap) map.tap.disable();
+    lockEl.classList.remove("memmap-lock-hidden");
+  }
+  function unlock(){
+    map.dragging.enable();
+    map.scrollWheelZoom.enable();
+    map.doubleClickZoom.enable();
+    if (map.touchZoom) map.touchZoom.enable();
+    if (map.tap) map.tap.enable();
+    lockEl.classList.add("memmap-lock-hidden");
+  }
+
+  lock(); // শুরুতে লক করা থাকবে
+
+  lockEl.addEventListener("click", (e) => { e.stopPropagation(); unlock(); });
+  mapEl.addEventListener("mouseleave", lock);
+  document.addEventListener("click", (e) => {
+    if (!mapEl.contains(e.target) && e.target !== lockEl) lock();
+  });
+}
+
+// একটা গ্রুপ (একই এলাকার সব বন্ধু) এর জন্য প্রোফাইল ছবি দিয়ে "পিন" আকৃতির মার্কার আইকন বানায়
+// (উপরে গোল ফ্রেমে ছবি, নিচে সরু হয়ে একটা পয়েন্ট — ঠিক ম্যাপ পিনের মতো)
+let pinIconCounter = 0;
+function buildAvatarIcon(group){
+  const count = group.friends.length;
+  const lead = group.friends[0];
+  const photo = resolveImage(lead.photo, lead.name);
+  const fallback = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(lead.name || "Friend")}&backgroundColor=ece2c8`;
+  const badge = count > 1 ? `<span class="memmap-avatar-badge">${count}</span>` : "";
+
+  // এই viewBox-এ পিনের শেপ ফিক্সড থাকে, চূড়ান্ত সাইজ CSS/iconSize দিয়ে ঠিক হয়
+  const vbW = 32, vbH = 42;
+  const cx = 16, cy = 15.5, r = 12.5; // ছবির গোল অংশ
+  const uid = "memmapPin" + (pinIconCounter++);
+
+  const width = count > 1 ? 44 : 38;
+  const height = Math.round(width * (vbH / vbW));
+
+  const html = `
+    <div class="memmap-pin" style="width:${width}px;height:${height}px;">
+      <svg viewBox="0 0 ${vbW} ${vbH}" width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <clipPath id="${uid}"><circle cx="${cx}" cy="${cy}" r="${r}"/></clipPath>
+        </defs>
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 11 16 26 16 26s16-15 16-26C32 7.163 24.837 0 16 0z"
+          fill="#16223d" stroke="#fff" stroke-width="1.6"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="#ece2c8"/>
+        <foreignObject x="${cx - r}" y="${cy - r}" width="${r * 2}" height="${r * 2}" clip-path="url(#${uid})">
+          <div xmlns="http://www.w3.org/1999/xhtml" style="width:100%;height:100%;">
+            <img src="${escapeHtml(photo)}" alt="${escapeHtml(lead.name)}"
+              style="width:100%;height:100%;object-fit:cover;display:block;"
+              onerror="this.onerror=null;this.src='${fallback}';">
+          </div>
+        </foreignObject>
+      </svg>
+      ${badge}
+    </div>
+  `;
+
+  return L.divIcon({
+    className: "memmap-avatar-icon",
+    html,
+    iconSize: [width, height],
+    iconAnchor: [width / 2, height],
+    popupAnchor: [0, -height + 6],
+  });
+}
+
 async function initMemoryMap(){
   const mapEl = document.getElementById("memoryMapEl");
   const statusEl = document.getElementById("memoryMapStatus");
+  const lockEl = document.getElementById("memoryMapLock");
   if (!mapEl) return;
 
   try{
@@ -238,17 +318,12 @@ async function initMemoryMap(){
       maxZoom: 18,
     }).addTo(map);
 
+    if (lockEl) setupMapScrollLock(map, mapEl, lockEl);
+
     const bounds = [];
     groupList.forEach(g => {
       const count = g.friends.length;
-      const radius = Math.min(10 + count * 3, 30);
-      const marker = L.circleMarker(g.coords, {
-        radius,
-        color: "#16223d",
-        weight: 2,
-        fillColor: "#b23a2e",
-        fillOpacity: 0.75,
-      }).addTo(map);
+      const marker = L.marker(g.coords, { icon: buildAvatarIcon(g) }).addTo(map);
 
       const names = g.friends.slice(0, 12).map(f => {
         const photo = resolveImage(f.photo, f.name);
