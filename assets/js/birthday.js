@@ -73,16 +73,69 @@ function bdayItem(f){
     </div>`;
 }
 
+const BDAY_PAGE_SIZE = 10;
+let _bdayAll = [];
+let _bdayPage = 0;
+
+function renderBirthdayPage(){
+  const wrap = document.getElementById("birthdayList");
+  const pager = document.getElementById("birthdayPager");
+  if (!wrap) return;
+
+  const totalPages = Math.max(1, Math.ceil(_bdayAll.length / BDAY_PAGE_SIZE));
+  if (_bdayPage >= totalPages) _bdayPage = totalPages - 1;
+  if (_bdayPage < 0) _bdayPage = 0;
+
+  const start = _bdayPage * BDAY_PAGE_SIZE;
+  const pageItems = _bdayAll.slice(start, start + BDAY_PAGE_SIZE);
+
+  wrap.innerHTML = pageItems.map(bdayItem).join("");
+
+  if (!pager) return;
+  if (_bdayAll.length <= BDAY_PAGE_SIZE){
+    pager.innerHTML = "";
+    return;
+  }
+
+  const from = start + 1;
+  const to = Math.min(start + BDAY_PAGE_SIZE, _bdayAll.length);
+  pager.innerHTML = `
+    <button type="button" class="page-btn" id="bdayPrevBtn" ${_bdayPage === 0 ? "disabled" : ""}>
+      <i class="bi bi-chevron-left"></i> আগের
+    </button>
+    <span class="page-info">${from}–${to} / ${_bdayAll.length} জন · পাতা ${_bdayPage + 1} / ${totalPages}</span>
+    <button type="button" class="page-btn" id="bdayNextBtn" ${_bdayPage >= totalPages - 1 ? "disabled" : ""}>
+      পরবর্তী <i class="bi bi-chevron-right"></i>
+    </button>
+  `;
+
+  const prevBtn = document.getElementById("bdayPrevBtn");
+  const nextBtn = document.getElementById("bdayNextBtn");
+  if (prevBtn) prevBtn.addEventListener("click", () => {
+    _bdayPage--;
+    renderBirthdayPage();
+    wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  if (nextBtn) nextBtn.addEventListener("click", () => {
+    _bdayPage++;
+    renderBirthdayPage();
+    wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
 async function initBirthdayList(){
   const wrap = document.getElementById("birthdayList");
   if (!wrap) return;
   try{
-    const upcoming = await getUpcomingBirthdays(10);
-    if (!upcoming.length){
+    _bdayAll = await getUpcomingBirthdays();
+    _bdayPage = 0;
+    if (!_bdayAll.length){
       wrap.innerHTML = `<div class="state-msg">Friends শিটে এখনো কারো "Birthday" কলাম ভরা হয়নি।</div>`;
+      const pager = document.getElementById("birthdayPager");
+      if (pager) pager.innerHTML = "";
       return;
     }
-    wrap.innerHTML = upcoming.map(bdayItem).join("");
+    renderBirthdayPage();
   }catch(e){
     wrap.innerHTML = `<div class="state-msg">জন্মদিনের তালিকা লোড করা যায়নি।</div>`;
   }

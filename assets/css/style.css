@@ -595,6 +595,29 @@ footer a{ color: var(--brass-2); }
 .bday-item.today{ border-color: var(--red); background: #fdf3f1; }
 .bday-item.today .dt{ color: var(--red); }
 
+/* --- Pagination (birthday list, etc.) --- */
+.pager{
+  display:flex; align-items:center; justify-content:center;
+  gap: 1rem; margin-top: 1.2rem; flex-wrap: wrap;
+}
+.pager .page-info{
+  font-family: var(--font-mono); font-size:.75rem; color: var(--slate);
+}
+.pager .page-btn{
+  font-family: var(--font-mono); font-size:.78rem; font-weight:600;
+  color: var(--ink); background: var(--white);
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: .45rem 1rem; cursor:pointer;
+  transition: transform .15s ease, box-shadow .15s ease, color .15s ease, background .15s ease;
+}
+.pager .page-btn:hover:not(:disabled){
+  background: var(--brass); color: var(--white); border-color: var(--brass);
+  transform: translateY(-1px); box-shadow: 2px 3px 0 var(--brass-2);
+}
+.pager .page-btn:disabled{
+  opacity:.4; cursor:not-allowed;
+}
+
 /* --- Fund tracker --- */
 .fund-card{
   background: var(--white);
