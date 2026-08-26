@@ -112,7 +112,40 @@
             </div>
             <div class="col-md-6">
               <label class="form-label mono small text-secondary text-uppercase">ছবির ফাইলের নাম বা লিংক <span class="text-danger">*</span></label>
-              <input type="text" name="photo" class="form-control" placeholder="যেমন: rafi.jpg বা পুরো URL" required>
+              <input type="text" name="photo" id="regPhotoInput" class="form-control mb-2" placeholder="যেমন: rafi.jpg বা পুরো URL" required>
+
+              <!-- লক করা অবস্থা — PIN দেওয়ার আগে এটা দেখাবে -->
+              <div id="regPhotoUploadLocked">
+                <button type="button" id="regPhotoUnlockBtn" class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-lock-fill me-1"></i> PIN দিয়ে সরাসরি ছবি আপলোড করো
+                </button>
+              </div>
+
+              <!-- আনলক হওয়া অবস্থা — সঠিক PIN দিলে এটা দেখাবে -->
+              <div id="regPhotoUploadBox" style="display:none;">
+                <label class="form-text mb-1 d-block">সরাসরি ছবি আপলোড করো (আপলোড হলে উপরের ঘরে অটো লিংক বসে যাবে)</label>
+                <input type="file" id="regPhotoFile" class="form-control form-control-sm" accept="image/png,image/jpeg,image/gif,image/webp">
+                <div class="small mt-1" id="regPhotoUploadStatus"></div>
+              </div>
+            </div>
+
+            <!-- PIN মডাল — শুধু ছবি আপলোড অংশটার জন্য, বাকি ফর্ম লক না -->
+            <div class="modal fade" id="regPhotoPinModal" tabindex="-1" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-key-fill me-1"></i> PIN দাও</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    <input type="password" inputmode="numeric" id="regPhotoPinInput" class="form-control" placeholder="ব্যাচের PIN">
+                    <div class="text-danger small mt-2" id="regPhotoPinError" style="display:none;">ভুল PIN, আবার চেষ্টা করো।</div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" id="regPhotoPinSubmit" class="btn-ink"><i class="bi bi-unlock-fill me-1"></i> আনলক করো</button>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="col-md-6">
               <label class="form-label mono small text-secondary text-uppercase">ফোন নম্বর <span class="text-danger">*</span></label>

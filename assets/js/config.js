@@ -143,6 +143,41 @@ async function submitToSheet(sheetName, data){
   });
 }
 
+/* ---------- Helper: একটা File অবজেক্টকে base64 স্ট্রিং-এ কনভার্ট করে (data: প্রিফিক্স ছাড়া) ---------- */
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(",")[1] || "");
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ---------- Helper: ছবি সরাসরি ফাইল আপলোড হলে — Apps Script দিয়ে (PIN + base64 পাঠিয়ে)
+   Cloudinary-তে আপলোড করানো হয়। গ্যালারি ফর্ম আর রেজিস্ট্রেশন ফর্ম দুটোই এই একই
+   হেল্পার ব্যবহার করে — শুধু `target` আলাদা, যাতে Apps Script বুঝতে পারে ছবিটা
+   Gallery শিটে সরাসরি row হিসেবে যোগ করবে নাকি শুধু URL রিটার্ন করবে (Friends
+   ফর্মের বেলায়, কারণ সেটা নিজে থেকেই আলাদা করে "Friends" শিটে পুরো row জমা দেয়)। */
+async function uploadImageViaScript({ file, pin, name, caption, tag, target }){
+  const base64 = await fileToBase64(file);
+  const body = new URLSearchParams({
+    action: "uploadImage",
+    target: target || "gallery",
+    pin,
+    name: name || "",
+    caption: caption || "",
+    tag: tag || "",
+    filename: file.name || "photo.jpg",
+    contentType: file.type || "image/jpeg",
+    file_base64: base64,
+  });
+  // এখানে ইচ্ছাকৃতভাবে no-cors ব্যবহার করা হচ্ছে না — কারণ আসল URL/success
+  // ব্রাউজারে ফেরত দরকার। x-www-form-urlencoded body হওয়ায় এটা "simple request"
+  // (কোনো preflight লাগে না)।
+  const res = await fetch(CONFIG.SUBMIT_SCRIPT_URL, { method: "POST", body });
+  return res.json(); // { status: "ok", url } অথবা { status: "error", message }
+}
+
 /* ---------- Helper: resolve an image field to a real URL ---------- */
 function resolveImage(value, fallbackSeed){
   if (!value || !value.trim()){

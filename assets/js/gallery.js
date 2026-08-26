@@ -82,37 +82,8 @@ async function initGallery(){
   populateGalleryFilter();
 }
 
-/* Helper: একটা File অবজেক্টকে base64 স্ট্রিং-এ কনভার্ট করে (data: প্রিফিক্স ছাড়া) */
-function fileToBase64(file){
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(",")[1] || "");
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-/* ছবি সরাসরি ফাইল আপলোড হলে — Apps Script দিয়ে (PIN + base64 পাঠিয়ে) imgtree.co-তে
-   আপলোড করানো হয়। imgtree.co-এর আসল Bearer API key শুধু Apps Script Properties-এ
-   থাকে, কখনো ব্রাউজারে বা Sheet-এ আসে না। */
-async function uploadImageViaScript({ file, pin, name, caption, tag }){
-  const base64 = await fileToBase64(file);
-  const body = new URLSearchParams({
-    action: "uploadImage",
-    pin,
-    name,
-    caption,
-    tag,
-    filename: file.name || "photo.jpg",
-    contentType: file.type || "image/jpeg",
-    file_base64: base64,
-  });
-  // এখানে ইচ্ছাকৃতভাবে no-cors ব্যবহার করা হচ্ছে না — কারণ imgtree.co-এর আসল
-  // URL/success ব্রাউজারে ফেরত দরকার। x-www-form-urlencoded body হওয়ায়
-  // এটা "simple request" (কোনো preflight লাগে না)।
-  const res = await fetch(CONFIG.SUBMIT_SCRIPT_URL, { method: "POST", body });
-  return res.json(); // { status: "ok", url } অথবা { status: "error", message }
-}
+/* fileToBase64() এবং uploadImageViaScript() এখন config.js-এ শেয়ার্ড হেল্পার হিসেবে
+   আছে (register.js-ও এগুলো ব্যবহার করে), তাই এখানে আলাদা করে ডেফাইন করা লাগছে না। */
 
 /* বন্ধুরা নিজে ছবি যোগ করার ফর্ম — wall.html-এর ফর্মের মতোই সরাসরি Sheet-এ লেখে */
 function initGalleryUploadForm(){
@@ -156,7 +127,7 @@ function initGalleryUploadForm(){
       if (file){
         const pin = sessionStorage.getItem("galleryPin") || "";
         const result = await uploadImageViaScript({
-          file, pin, name: data.name, caption: data.caption, tag: data.tag,
+          file, pin, name: data.name, caption: data.caption, tag: data.tag, target: "gallery",
         });
         if (result.status !== "ok" || !result.url){
           throw new Error(result.message || "আপলোড ব্যর্থ হয়েছে।");

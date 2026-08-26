@@ -193,8 +193,18 @@ function handleImageUpload(params) {
 
   const directUrl = body.secure_url;
 
-  // সফল হলে Gallery ট্যাবে row যোগ করি — Status খালি রাখি, অ্যাডমিন Sheet-এ
-  // গিয়ে Status = 1 করলে তবেই ছবিটা সবার কাছে দেখাবে (friends.html-এর মতোই)
+  // target=friends → এটা friends.html-এর রেজিস্ট্রেশন ফর্মের ছবি ফিল্ড থেকে
+  // আসা আপলোড, শুধু আপলোড করা ছবির URL ফেরত দিলেই হবে — ফর্মটা নিজে থেকেই
+  // পুরো row (নাম, ফোন, ইমেইল ইত্যাদিসহ) আলাদাভাবে "Friends" শিটে জমা দেয়,
+  // তাই এখানে Gallery শিটে কিছু লেখার দরকার নেই।
+  const target = (params.target || "gallery").toString().trim().toLowerCase();
+  if (target === "friends") {
+    return jsonOut({ status: "ok", url: directUrl });
+  }
+
+  // ডিফল্ট (target=gallery বা অনুল্লিখিত) — আগের মতোই Gallery ট্যাবে row যোগ করি।
+  // Status খালি রাখি, অ্যাডমিন Sheet-এ গিয়ে Status = 1 করলে তবেই ছবিটা সবার
+  // কাছে দেখাবে (friends.html-এর মতোই)
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName("Gallery");
   if (!sheet) {
